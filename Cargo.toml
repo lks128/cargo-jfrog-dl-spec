@@ -1,0 +1,17 @@
+[package]
+name = "cargo-jfrog-dl-spec"
+version = "0.1.0"
+edition = "2021"
+authors = ["Andris Ļaksa (linkedin.com/in/andris-laksa)"]
+description = "A cargo subcommand that based on a Cargo.lock file generates JFrog CLI spec file to download crates from a private registry."
+license = "Apache-2.0"
+repository = "https://github.com/lks128/cargo-jfrog-dl-spec"
+readme = "README.md"
+categories = ["development-tools::cargo-plugins"]
+keywords = ["jfrog", "artifactory", "plugins", "cargo", "subcommand"]
+
+[dependencies]
+cargo = "0.59.0"
+serde = {version = "1.0.136", features=["derive"]}
+serde_json = "1.0.78"
+clap = { version = "3.0.14", features = ["derive"] }
