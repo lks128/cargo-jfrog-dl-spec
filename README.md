@@ -10,7 +10,7 @@ cargo install cargo-jfrog-dl-spec
 ## Usage
 ```shell
 # Generate spec file
-cargo jfrog-dl-spec -c artifactory -j cargo-private >spec.json
+cargo jfrog-dl-spec --registry artifactory >spec.json
 
 # Download crates from spec file
 jfrog rt dl --spec=spec.json

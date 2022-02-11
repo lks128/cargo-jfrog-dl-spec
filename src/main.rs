@@ -16,7 +16,7 @@ use cargo::core::Workspace;
 use cargo::ops::load_pkg_lockfile;
 use cargo::util::short_hash;
 use cargo::Config;
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use serde::Serialize;
 use std::path::Path;
 
@@ -35,17 +35,26 @@ struct JfrogDownloadSpec {
 #[derive(Parser, Debug)]
 #[clap(about, version, author)]
 struct Args {
-    /// Name of the cargo registry as mentioned in Cargo.toml
-    #[clap(short, long)]
-    cargo_reg: String,
+    #[clap(subcommand)]
+    command: Command,
+}
 
-    /// Name of the JFrog repository
-    #[clap(short, long)]
-    jfrog_repo: String,
+#[derive(Subcommand, Debug)]
+enum Command {
+    #[clap(name = "jfrog-dl-spec")]
+    Main {
+        /// Name of the cargo registry as mentioned in Cargo.toml
+        #[clap(short, long)]
+        registry: String,
+    },
 }
 
 fn main() {
     let args = Args::parse();
+    let registry = match args.command {
+        Command::Main { registry } => registry,
+    };
+
     let config = Config::default().unwrap();
     let path = Path::new("./Cargo.toml").canonicalize().unwrap();
     let ws = Workspace::new(&path, &config).unwrap();
@@ -55,19 +64,24 @@ fn main() {
 
     for dep in res
         .iter()
-        .filter(|d| d.source_id().display_registry_name() == args.cargo_reg)
+        .filter(|d| d.source_id().display_registry_name() == registry)
     {
         let reg_name = format!(
             "{}-{}",
             dep.source_id().url().host().unwrap(),
             short_hash(&dep.source_id())
         );
+
         let cache_path = config.registry_cache_path().join(reg_name);
 
         spec.files.push(JfrogDownloadFile {
             pattern: format!(
                 "{repo}/crates/{name}/{name}-{version}.crate",
-                repo = args.jfrog_repo,
+                repo = Path::new(dep.source_id().url().path())
+                    .file_stem()
+                    .unwrap()
+                    .to_str()
+                    .unwrap(),
                 name = dep.name(),
                 version = dep.version()
             ),
