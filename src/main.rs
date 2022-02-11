@@ -19,7 +19,9 @@ use cargo::Config;
 use clap::{Parser, Subcommand};
 use log::{info, LevelFilter};
 use serde::Serialize;
+use std::io::Write;
 use std::path::Path;
+use std::process;
 
 #[derive(Serialize)]
 struct JfrogDownloadFile {
@@ -51,6 +53,10 @@ enum Command {
         /// Download only crates missing from cache
         #[clap(short, long)]
         missing_only: bool,
+
+        /// Store spec.json in temp and run jfrog rt dl automatically
+        #[clap(short, long)]
+        apply: bool,
     },
 }
 
@@ -61,11 +67,12 @@ fn main() {
         .init();
 
     let args = Args::parse();
-    let (registry, missing_only) = match args.command {
+    let (registry, missing_only, apply) = match args.command {
         Command::Main {
             registry,
             missing_only,
-        } => (registry, missing_only),
+            apply,
+        } => (registry, missing_only, apply),
     };
 
     let config = Config::default().unwrap();
@@ -109,5 +116,31 @@ fn main() {
     }
 
     info!("{} crate(s) to download", spec.files.len());
-    println!("{}", serde_json::to_string(&spec).unwrap());
+
+    if apply {
+        if spec.files.len() > 0 {
+            let mut tmp = tempfile::Builder::new()
+                .prefix("spec_")
+                .suffix(".json")
+                .tempfile()
+                .unwrap();
+            let path = tmp.path().to_str().unwrap().to_string();
+            let file = tmp.as_file_mut();
+            let json = serde_json::to_string(&spec).unwrap();
+
+            file.write(json.as_bytes()).unwrap();
+            file.flush().unwrap();
+
+            info!("Wrote {}", path);
+
+            process::Command::new("jfrog")
+                .args(vec!["rt", "dl", &format!("--spec={}", path)])
+                .spawn()
+                .unwrap()
+                .wait()
+                .unwrap();
+        }
+    } else {
+        println!("{}", serde_json::to_string(&spec).unwrap());
+    }
 }

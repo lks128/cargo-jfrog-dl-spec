@@ -148,7 +148,7 @@ dependencies = [
 
 [[package]]
 name = "cargo-jfrog-dl-spec"
-version = "1.1.0"
+version = "1.2.0"
 dependencies = [
  "cargo",
  "clap 3.0.14",
@@ -156,6 +156,7 @@ dependencies = [
  "log",
  "serde",
  "serde_json",
+ "tempfile",
 ]
 
 [[package]]
