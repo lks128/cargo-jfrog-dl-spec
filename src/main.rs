@@ -17,6 +17,7 @@ use cargo::ops::load_pkg_lockfile;
 use cargo::util::short_hash;
 use cargo::Config;
 use clap::{Parser, Subcommand};
+use log::{info, LevelFilter};
 use serde::Serialize;
 use std::path::Path;
 
@@ -46,13 +47,25 @@ enum Command {
         /// Name of the cargo registry as mentioned in Cargo.toml
         #[clap(short, long)]
         registry: String,
+
+        /// Download only crates missing from cache
+        #[clap(short, long)]
+        missing_only: bool,
     },
 }
 
 fn main() {
+    env_logger::builder()
+        .filter_level(LevelFilter::Info)
+        .parse_default_env()
+        .init();
+
     let args = Args::parse();
-    let registry = match args.command {
-        Command::Main { registry } => registry,
+    let (registry, missing_only) = match args.command {
+        Command::Main {
+            registry,
+            missing_only,
+        } => (registry, missing_only),
     };
 
     let config = Config::default().unwrap();
@@ -74,6 +87,11 @@ fn main() {
 
         let cache_path = config.registry_cache_path().join(reg_name);
 
+        if cache_path.as_path_unlocked().exists() && missing_only {
+            info!("Crate {} exists in cache, skipping...", dep);
+            continue;
+        }
+
         spec.files.push(JfrogDownloadFile {
             pattern: format!(
                 "{repo}/crates/{name}/{name}-{version}.crate",
@@ -90,5 +108,6 @@ fn main() {
         });
     }
 
+    info!("{} crate(s) to download", spec.files.len());
     println!("{}", serde_json::to_string(&spec).unwrap());
 }
