@@ -1,6 +1,6 @@
 [package]
 name = "cargo-jfrog-dl-spec"
-version = "1.2.0"
+version = "1.2.1"
 edition = "2021"
 authors = ["Andris Ļaksa (linkedin.com/in/andris-laksa)"]
 description = "A cargo subcommand that based on a Cargo.lock file generates JFrog CLI spec file to download crates from a private registry."

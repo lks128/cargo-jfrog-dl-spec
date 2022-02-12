@@ -94,9 +94,12 @@ fn main() {
 
         let cache_path = config.registry_cache_path().join(reg_name);
 
-        if cache_path.as_path_unlocked().exists() && missing_only {
-            info!("Crate {} exists in cache, skipping...", dep);
-            continue;
+        if missing_only {
+            let crate_path = cache_path.join(format!("{}-{}.crate", dep.name(), dep.version()));
+            if crate_path.as_path_unlocked().exists() {
+                info!("Crate {} exists in cache, skipping...", dep);
+                continue;
+            }
         }
 
         spec.files.push(JfrogDownloadFile {
